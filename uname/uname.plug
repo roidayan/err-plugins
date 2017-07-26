@@ -1,0 +1,9 @@
+[Core]
+Name = uname
+Module = uname
+
+[Documentation]
+Description = Example plugin to show uname information.
+
+[Python]
+Version = 2+
