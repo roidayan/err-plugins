@@ -1,9 +1,0 @@
-[Core]
-Name = FW
-Module = fw
-
-[Documentation]
-Description = Internal plugin to show latest FW
-
-[Python]
-Version = 2+

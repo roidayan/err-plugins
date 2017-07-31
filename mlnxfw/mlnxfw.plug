@@ -1,0 +1,9 @@
+[Core]
+Name = mlnxfw
+Module = mlnxfw
+
+[Documentation]
+Description = Internal plugin to show latest Mellanox FW
+
+[Python]
+Version = 2+
