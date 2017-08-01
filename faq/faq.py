@@ -54,6 +54,7 @@ FOUND_RESPONSE = [
     "pretty sure it's {a}",
     "probably {a}",
     "afaik it's {a}",
+    "fyi, it's {a}",
 ]
 
 
