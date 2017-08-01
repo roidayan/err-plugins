@@ -14,6 +14,7 @@ DUP_RESPONSE = [
     'I know something else',
     'hmm, i know differently',
     'are you sure?',
+    'already have something',
 ]
 
 ADD_REM_RESPONSE = [
@@ -64,18 +65,25 @@ class FaqPlugin(BotPlugin):
         super().activate();
         self.db = TinyDB(faq_db)
 
+    def getfromdb(self, q):
+        i = Query()
+        return self.db.search(i.q == q)
+
     def addFAQ(self, q, a):
+        if self.getfromdb(q):
+            return random.choice(DUP_RESPONSE)
         self.db.insert({'q': q, 'a': a})
         return random.choice(ADD_RESPONSE)
 
     def remFAQ(self, q):
+        if not self.getfromdb(q):
+            return "Never knew it"
         i = Query()
         self.db.remove(i.q == q)
         return random.choice(REM_RESPONSE)
 
     def getFAQ(self, q):
-        i = Query()
-        r = self.db.search(i.q == q)
+        r = self.getfromdb(q)
         if not r:
             return random.choice(NOT_FOUND_RESPONSE)
         a = r[0]['a']
@@ -103,6 +111,4 @@ class FaqPlugin(BotPlugin):
     @re_botcmd(pattern=r"^(forget|remove|clear|unset) (?P<q>\w+)", prefixed=True, flags=re.IGNORECASE)
     def forget_definition(self, msg, match):
         q = match.group('q')
-        if not q:
-            return 'What?'
         return self.remFAQ(q)
