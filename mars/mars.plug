@@ -1,0 +1,9 @@
+[Core]
+Name = mars
+Module = mars
+
+[Documentation]
+Description = Internal plugin to show session info from Mellanox MARS
+
+[Python]
+Version = 2+
