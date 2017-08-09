@@ -95,7 +95,7 @@ class FaqPlugin(BotPlugin):
         q = match.group('q')
         return self.getFAQ(q)
     
-    @re_botcmd(pattern=r"^(?P<q>\w+)(\?| \?|$)", prefixed=True, flags=re.IGNORECASE)
+    @re_botcmd(pattern=r"^(?P<q>\w+)(\s*\?|$)", prefixed=True, flags=re.IGNORECASE)
     def look_for_word(self, msg, match):
         q = match.group('q')
         return self.getFAQ(q)
