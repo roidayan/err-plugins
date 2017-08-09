@@ -15,7 +15,10 @@ font = {
 }
 mpl.rc('font', **font)
 
-from errbot import BotPlugin, botcmd, re_botcmd
+from errbot import BotPlugin, botcmd, re_botcmd, webhook
+
+
+MARS_REPORT_CHANNEL = "#ovs-regression"
 
 
 class MarsPlugin(BotPlugin):
@@ -65,10 +68,12 @@ class MarsPlugin(BotPlugin):
     @botcmd
     def mars(self, msg, args):
         yield 'on it..'
+        session_details = self.get_last_session_details()
+        return self.send_report(session_details, msg.frm)
 
-        r = self.get_last_session_details()
+    def send_report(self, session_details, to):
+        r = session_details
         qs = r['quick_summary']
-
         # prep ahead in case something is missing
         session_id = r['session_id']
         setup = r['setup']['name']
@@ -83,7 +88,7 @@ class MarsPlugin(BotPlugin):
         if not pie_created:
             return 'failed creating pie chart'
 
-        pie_posted = self.post_pie(msg, pie)
+        pie_posted = self.post_pie(to, pie)
         if not pie_posted:
             return 'failed posting pie chart'
 
@@ -95,7 +100,7 @@ class MarsPlugin(BotPlugin):
                             ('End time', end_time),
                        ),
                        color='red',
-                       in_reply_to=msg)
+                       to=to)
 
         return 'ok'
 
@@ -111,9 +116,26 @@ class MarsPlugin(BotPlugin):
                 break
         return False
 
-    def post_pie(self, msg, pie):
-        stream = self.send_stream_request(msg.frm, open(pie, 'rb'),
+    def post_pie(self, to, pie):
+        stream = self.send_stream_request(to, open(pie, 'rb'),
                                           name=os.path.basename(pie),
                                           stream_type='image/png')
 
         return self._wait_for_success(stream)
+
+    @webhook('/mars_session_end/<session>/')
+    def mars_session_end(self, request, session):
+        try:
+            session = int(session)
+        except ValueError:
+            return 'bad session'
+
+        self.log.info('Fetching session details %s' % session)
+        details = parse_session_details(session)
+        if not details:
+            return 'no such session'
+
+        self.log.info('Sending report to %s' % MARS_REPORT_CHANNEL)
+        to = self.build_identifier(MARS_REPORT_CHANNEL)
+        self.send(to, 'Mars session %s completed, fetching report' % session)
+        return self.send_report(details, to)
