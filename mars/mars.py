@@ -117,7 +117,3 @@ class MarsPlugin(BotPlugin):
                                           stream_type='image/png')
 
         return self._wait_for_success(stream)
-
-#    @re_botcmd(pattern=r"(^| )(fw|firmware)\?( |$)", prefixed=True, flags=re.IGNORECASE)
-#    def re_fw(self, msg, match):
-#        return self.fw(msg, None)
