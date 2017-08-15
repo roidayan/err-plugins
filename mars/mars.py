@@ -92,14 +92,29 @@ class MarsPlugin(BotPlugin):
         if not pie_posted:
             return 'failed posting pie chart'
 
+        color = 'green' if final_result == 'Passed' else 'red'
+
+        fields = [
+            ('Session id', session_id),
+            ('Result', final_result),
+            ('Start time', start_time),
+            ('End time', end_time),
+        ]
+
+        body = ''
+
+        failed_cases = [x['test']+'/'+x['case'] for x in r['quick_case_result'] if x['result'] == 'Failed']
+        if len(failed_cases) > 10:
+            failed_cases = failed_cases[:10]
+            failed_cases.append('...')
+
+        if failed_cases:
+            body = '*Failed cases*\n' + '\n'.join(failed_cases)
+
         self.send_card(title='Mars result for %s/%s' % (setup, conf),
-                       body=final_result,
-                       fields=(
-                            ('Session id', session_id),
-                            ('Start time', start_time),
-                            ('End time', end_time),
-                       ),
-                       color='red',
+                       body=body,
+                       fields=fields,
+                       color=color,
                        to=to)
 
         return 'ok'
