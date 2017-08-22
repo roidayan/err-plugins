@@ -30,9 +30,8 @@ class MarsPlugin(BotPlugin):
         last_s = s[0]
         return parse_session_details(last_s['session_id'])
 
-    def generate_pie_chart(self, pie, qs):
+    def generate_pie_chart(self, pie, qs, title):
         self.__exec('rm -f '+pie)
-        #out = self.__exec('/labhome/roid/scripts/mars/pie_demo.py --out '+pie)
 
         data = {
             'Passed': qs['passed'],
@@ -60,6 +59,7 @@ class MarsPlugin(BotPlugin):
         plt.legend(patches, labels, loc="best")
         plt.tight_layout()
         plt.axis('equal')
+        plt.title(title)
 
         plt.savefig(pie)
 
@@ -74,7 +74,6 @@ class MarsPlugin(BotPlugin):
     def send_report(self, session_details, to):
         r = session_details
         qs = r['quick_summary']
-        # prep ahead in case something is missing
         session_id = r['session_id']
         setup = r['setup']['name']
         conf = r['setup']['conf_file_short']
@@ -82,9 +81,10 @@ class MarsPlugin(BotPlugin):
         status = r['session_setup_info']['STATUS']
         start_time = r['start_time']
         end_time = r['end_time']
+        setup_conf = setup+'/'+conf
 
         pie = '/tmp/pie.png'
-        pie_created = self.generate_pie_chart(pie, qs)
+        pie_created = self.generate_pie_chart(pie, qs, setup_conf)
         if not pie_created:
             return 'failed creating pie chart'
 
@@ -92,8 +92,8 @@ class MarsPlugin(BotPlugin):
         if not pie_posted:
             return 'failed posting pie chart'
 
+        body = ''
         color = 'green' if final_result == 'Passed' else 'red'
-
         fields = [
             ('Session id', session_id),
             ('Result', final_result),
@@ -101,17 +101,28 @@ class MarsPlugin(BotPlugin):
             ('End time', end_time),
         ]
 
-        body = ''
 
-        failed_cases = [x['test']+'/'+x['case'] for x in r['quick_case_result'] if x['result'] == 'Failed']
-        if len(failed_cases) > 10:
-            failed_cases = failed_cases[:10]
-            failed_cases.append('...')
+        def get_cases(status):
+            max = 4
+            cases = [x['test']+'/'+x['case'] for x in r['quick_case_result'] if x['result'].lower() == status.lower()]
+            if len(cases) > max:
+                cases = cases[:max]
+                cases.append('...')
+            return cases
+
+
+        failed_cases = get_cases('Failed')
+        ignored_cases = get_cases('Ignored')
 
         if failed_cases:
-            body = '*Failed cases*\n' + '\n'.join(failed_cases)
+            body += '\n*Failed cases*\n' + '\n'.join(failed_cases)
 
-        self.send_card(title='Mars result for %s/%s' % (setup, conf),
+        if ignored_cases:
+            body += '\n*Ignored cases*\n' + '\n'.join(ignored_cases)
+
+        body = body.strip()
+
+        self.send_card(title='Mars result for %s' % setup_conf,
                        body=body,
                        fields=fields,
                        color=color,
